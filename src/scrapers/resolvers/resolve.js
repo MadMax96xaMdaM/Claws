@@ -20,6 +20,7 @@ const StreamM4u = require('./StreamM4u');
 const {GoogleDrive, getGoogleDriveScrapeUrl} = require('./GoogleDrive');
 const MovieFiles = require('./MovieFiles');
 const EnterVideo = require('./EnterVideo');
+const FardaDownload = require('./FardaDownload');
 const logger = require('../../utils/logger');
 
 const Mp4Upload = require('./Mp4Upload');
@@ -276,7 +277,11 @@ async function resolve(sse, uri, source, jar, headers, quality = '') {
             const data = await EnterVideo(uri, jar, headers);
             const event = createEvent(data, false, undefined, {quality, provider: 'EnterVideo', source});
             sse.send(event, event.event);*/
-        } else {
+        } else if (uri.includes('updlf.com')) {
+            const data = await FardaDownload(uri, jar, headers);
+            const event = createEvent(data, false, undefined, {quality, provider: 'FardaDownload', source, isDownload: true});
+            sse.send(event, event.event);
+         } else {
             logger.warn({source, providerUrl: uri, warning: 'Missing resolver'});
         }
     } catch(err) {
