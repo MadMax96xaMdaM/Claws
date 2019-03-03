@@ -277,7 +277,7 @@ async function resolve(sse, uri, source, jar, headers, quality = '') {
             const data = await EnterVideo(uri, jar, headers);
             const event = createEvent(data, false, undefined, {quality, provider: 'EnterVideo', source});
             sse.send(event, event.event);*/
-        } else if (uri.includes('updlf.com')) {
+        } else if (uri.includes('updlf.com') || uri.includes('upload8.net')) {
             const data = await FardaDownload(uri, jar, headers);
             const event = createEvent(data, false, undefined, {quality, provider: 'FardaDownload', source, isDownload: true});
             sse.send(event, event.event);
