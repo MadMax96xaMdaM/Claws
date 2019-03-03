@@ -55,11 +55,11 @@ module.exports = class FardaDownload extends BaseProvider {
 
                     const paddedSeason = `${season}`.padStart(2, '0');
                     const paddedEpisode = `${episode}`.padStart(2, '0');
-                    const formattedEpisode = `S${paddedSeason}E${paddedEpisode}`;
+                    const formattedEpisode = `s${paddedSeason}e${paddedEpisode}`;
 
                     $('a').toArray().forEach(element => {
                         const fileName = $(element).text();
-                        if (fileName.includes(formattedEpisode)) {
+                        if (fileName.toLowerCase().includes(formattedEpisode)) {
                             const filePath = $(element).attr('href');
                             const directLink = this._absoluteUrl(folderLink, filePath);
                             resolvePromises.push(this.resolveLink(directLink, ws, jar, headers));
