@@ -7,7 +7,6 @@ module.exports = exports = {
         new (require('./movies/bfmovies'))(),
         new (require('./movies/StreamM4u'))(),
         //require('./movies/MovieFiles'),
-        new (require('./movies/FardaDownload'))()
     ],
     tv: [
         require('./tv/GoWatchSeries'),
@@ -23,5 +22,6 @@ module.exports = exports = {
         new (require('./universal/123movie'))(),
         new (require('./anime/MasterAnime'))(),
         //require('./universal/5movies')
+        new (require('./universal/FardaDownload'))()
     ]
 };
