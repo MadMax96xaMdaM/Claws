@@ -45,7 +45,7 @@ module.exports = class bfmovies extends BaseProvider {
             
             let openloadPage = $("iframe").attr('src');
             if(!openloadPage.includes("openload")){
-                logger.debug("BFMovies does not always use OpenLoad.");
+                this.logger.debug("BFMovies does not always use OpenLoad.");
                 return false;
             }
             const openloadHTML = await this._createRequest(rp, openloadPage);

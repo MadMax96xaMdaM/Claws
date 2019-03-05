@@ -1,76 +1,28 @@
 const Promise = require('bluebird');
-const RequestPromise = require('request-promise');
 const cheerio = require('cheerio');
 const randomUseragent = require('random-useragent');
+const BaseProvider = require('../BaseProvider');
 
-const resolve = require('../../resolvers/resolve');
-const {isSameSeriesName} = require('../../../utils');
-const logger = require('../../../utils/logger');
-
-async function SeriesFree(req, sse) {
-    const clientIp = req.client.remoteAddress.replace('::ffff:', '').replace('::1', '');
-    const showTitle = req.query.title;
-    const {season, episode, year} = req.query;
-
-    // These providers were in the Terarium source, but are now dead..... We need to find others
-    // https://seriesfree1.bypassed.bz, https://seriesfree1.bypassed.eu, https://seriesfree1.bypassed.bz
-
-    const urls = ["https://seriesfree.to"];
-    const promises = [];
-
-    const rp = RequestPromise.defaults(target => {
-        if (sse.stopExecution) {
-            return null;
-        }
-
-        return RequestPromise(target);
-    });
-
-    async function scrapeHarder(videoUrl, userAgent, clientIp, sse, jar) {
-        try {
-            const videoPageHtml = await rp({
-                uri: videoUrl,
-                headers: {
-                    'user-agent': userAgent
-                },
-                jar,
-                timeout: 5000
-            });
-
-            let $ = cheerio.load(videoPageHtml);
-
-            const providerUrl = $('.action-btn').attr('href');
-
-            const headers = {
-                'user-agent': userAgent,
-                'x-real-ip': clientIp,
-                'x-forwarded-for': clientIp
-            };
-            return resolve(sse, providerUrl, 'SeriesFree', jar, headers);
-        } catch (err) {
-            if (!sse.stopExecution) {
-                logger.error({source: 'SeriesFree', sourceUrl: videoUrl, query: {title: req.query.title, season: req.query.season, episode: req.query.episode}, error: (err.message || err.toString()).substring(0, 100) + '...'});
-            }
-        }
+module.exports = class extends BaseProvider {
+    /** @inheritdoc */
+    getUrls() {
+        return ['https://seriesfree.to'];
     }
 
-    // Go to each url and scrape for links, then send the link to the client
-    async function scrape(url) {
+    /** @inheritdoc */
+    async scrape(url, req, ws) {
+        const clientIp = this._getClientIp(req);
+        const showTitle = req.query.title;
+        const { season, episode, year } = req.query;
+        const userAgent = randomUseragent.getRandom();
         const resolvePromises = [];
 
         try {
+            const rp = this._getRequest(req, ws);
             const jar = rp.jar();
-            const userAgent = randomUseragent.getRandom();
-            const html = await rp({
-                uri: `${url}/search/${showTitle.replace(/ \(.*\)/, '').replace(/ /, '%20')}`,
-                headers: {
-                    'user-agent': userAgent
-                },
-                jar,
-                timeout: 5000
-            });
-
-            let $ = cheerio.load(html);
+            const searchTitle = showTitle.replace(/\s+/g, '%20');
+            const response = await this._createRequest(rp, `${url}/search/${searchTitle}`, jar, { 'user-agent': userAgent })
+            let $ = cheerio.load(response);
 
             let showUrl = '';
             $('.serie-title').toArray().some(element => {
@@ -80,20 +32,11 @@ async function SeriesFree(req, sse) {
                 }
                 return false;
             });
-
             if (!showUrl) {
                 return Promise.resolve();
             }
 
-            const videoPageHtml = await rp({
-                uri: showUrl,
-                headers: {
-                    'user-agent': userAgent
-                },
-                jar,
-                timeout: 5000
-            });
-
+            const videoPageHtml = await this._createRequest(rp, showUrl, jar, { 'user-agent': userAgent });
             $ = cheerio.load(videoPageHtml);
 
             let episodeUrl;
@@ -106,41 +49,37 @@ async function SeriesFree(req, sse) {
             });
 
             if (!episodeUrl) {
-                logger.debug('SeriesFree', `Could not find: ${showTitle} ${season}×${episode}`);
+                this.logger.debug('SeriesFree', `Could not find: ${showTitle} ${season}×${episode}`);
                 return Promise.resolve();
             }
 
-            const episodePageHtml = await rp({
-                uri: episodeUrl,
-                headers: {
-                    'user-agent': userAgent
-                },
-                jar,
-                timeout: 5000
-            });
-
+            const episodePageHtml = await this._createRequest(rp, episodeUrl, jar, { 'user-agent': userAgent });
             $ = cheerio.load(episodePageHtml);
 
             const videoUrls = $('.watch-btn').toArray().map(element => `${url}${$(element).attr('href')}`);
-
             videoUrls.forEach((videoUrl) => {
-                resolvePromises.push(scrapeHarder(videoUrl, userAgent, clientIp, sse, jar));
+                resolvePromises.push(this.scrapeHarder(rp, videoUrl, userAgent, clientIp, ws, jar));
             });
         } catch (err) {
-            if (!sse.stopExecution) {
-              logger.error({source: 'SeriesFree', sourceUrl: url, query: {title: req.query.title, season: req.query.season, episode: req.query.episode}, error: (err.message || err.toString()).substring(0, 100) + '...'});
-            }
+            this._onErrorOccurred(err);
         }
-
         return Promise.all(resolvePromises);
     }
 
-    // Asynchronously start all the scrapers for each url
-    urls.forEach((url) => {
-        promises.push(scrape(url));
-    });
+    async scrapeHarder(rp, videoUrl, userAgent, clientIp, ws, jar) {
+        try {
+            const videoPageHtml = await this._createRequest(rp, videoUrl, jar, { 'user-agent': userAgent })
+            const $ = cheerio.load(videoPageHtml);
+            const providerUrl = $('.action-btn').attr('href');
+            const headers = {
+                'user-agent': userAgent,
+                'x-real-ip': clientIp,
+                'x-forwarded-for': clientIp
+            };
 
-    return Promise.all(promises);
+            return this.resolveLink(providerUrl, ws, jar, headers)
+        } catch (err) {
+            this._onErrorOccurred(err)
+        }
+    }
 }
-
-module.exports = exports = SeriesFree;
