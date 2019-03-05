@@ -2,6 +2,7 @@
 
 // Load providers
 const providers = require('../scrapers/providers');
+const logger = require('../utils/logger');
 
 const BaseProvider = require('../scrapers/providers/BaseProvider');
 
@@ -60,7 +61,7 @@ const resolveLinks = async (searchData, ws, req) => {
     });
 
     await Promise.all(promises);
-
+    logger.debug('All promises resolved - sending `done` event');
     sse.send({event: 'done'}, 'done');
 };
 

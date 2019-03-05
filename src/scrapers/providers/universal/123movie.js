@@ -70,7 +70,7 @@ module.exports = class _123movie extends BaseProvider {
             let outputPageURL = cheerio.load(targetPageHTML)('iframe').attr('src');
             let outputPageHTML = await this._createRequest(rp, outputPageURL, jar, headers);
             let openloadVideoURL = cheerio.load(outputPageHTML)('meta[name="og:url"]').attr('content');
-            resolvePromises.push(this.resolveLink(openloadVideoURL, ws, jar, headers));
+            resolvePromises.push(this._resolveLink(openloadVideoURL, ws, jar, headers));
         }
         catch (err) {
             this._onErrorOccurred(err)

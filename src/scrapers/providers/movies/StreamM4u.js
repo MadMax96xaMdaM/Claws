@@ -81,7 +81,7 @@ module.exports = class StreamM4u extends BaseProvider {
 
                 }
             }
-            return this.resolveLink(providerUrl, ws, jar, headers)
+            return this._resolveLink(providerUrl, ws, jar, headers)
         } catch (err) {
             this._onErrorOccurred(err)
         }

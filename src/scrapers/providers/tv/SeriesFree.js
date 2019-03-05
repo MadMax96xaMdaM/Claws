@@ -1,6 +1,5 @@
 const Promise = require('bluebird');
 const cheerio = require('cheerio');
-const randomUseragent = require('random-useragent');
 const BaseProvider = require('../BaseProvider');
 
 module.exports = class extends BaseProvider {
@@ -11,17 +10,14 @@ module.exports = class extends BaseProvider {
 
     /** @inheritdoc */
     async scrape(url, req, ws) {
-        const clientIp = this._getClientIp(req);
         const showTitle = req.query.title;
         const { season, episode, year } = req.query;
-        const userAgent = randomUseragent.getRandom();
-        const resolvePromises = [];
+        let resolvePromises = [];
 
         try {
-            const rp = this._getRequest(req, ws);
-            const jar = rp.jar();
+            const jar = this.rp.jar();
             const searchTitle = showTitle.replace(/\s+/g, '%20');
-            const response = await this._createRequest(rp, `${url}/search/${searchTitle}`, jar, { 'user-agent': userAgent })
+            const response = await this._createRequest(this.rp, `${url}/search/${searchTitle}`, jar, { 'user-agent': this.userAgent })
             let $ = cheerio.load(response);
 
             let showUrl = '';
@@ -35,8 +31,7 @@ module.exports = class extends BaseProvider {
             if (!showUrl) {
                 return Promise.resolve();
             }
-
-            const videoPageHtml = await this._createRequest(rp, showUrl, jar, { 'user-agent': userAgent });
+            const videoPageHtml = await this._createRequest(this.rp, showUrl, jar, { 'user-agent': this.userAgent });
             $ = cheerio.load(videoPageHtml);
 
             let episodeUrl;
@@ -53,31 +48,38 @@ module.exports = class extends BaseProvider {
                 return Promise.resolve();
             }
 
-            const episodePageHtml = await this._createRequest(rp, episodeUrl, jar, { 'user-agent': userAgent });
+            const episodePageHtml = await this._createRequest(this.rp, episodeUrl, jar, { 'user-agent': this.userAgent });
             $ = cheerio.load(episodePageHtml);
-
+            const resolveLinkPromises = [];
             const videoUrls = $('.watch-btn').toArray().map(element => `${url}${$(element).attr('href')}`);
-            videoUrls.forEach((videoUrl) => {
-                resolvePromises.push(this.scrapeHarder(rp, videoUrl, userAgent, clientIp, ws, jar));
-            });
+            resolvePromises = this.resolveVideoLinks(ws, videoUrls);
         } catch (err) {
             this._onErrorOccurred(err);
         }
         return Promise.all(resolvePromises);
     }
 
-    async scrapeHarder(rp, videoUrl, userAgent, clientIp, ws, jar) {
+    /** @inheritdoc */
+    async resolveVideoLinks(ws, videoUrls) {
+        const resolveLinkPromises = [];        
+        videoUrls.forEach((videoUrl) => {
+            resolveLinkPromises.push(this.scrapeHarder(videoUrl, ws));
+        });
+        return resolveLinkPromises;
+    }
+
+    async scrapeHarder(videoUrl, ws) {
         try {
-            const videoPageHtml = await this._createRequest(rp, videoUrl, jar, { 'user-agent': userAgent })
+            const videoPageHtml = await this._createRequest(this.rp, videoUrl, this.rp.jar(), { 'user-agent': this.userAgent })
             const $ = cheerio.load(videoPageHtml);
             const providerUrl = $('.action-btn').attr('href');
             const headers = {
-                'user-agent': userAgent,
-                'x-real-ip': clientIp,
-                'x-forwarded-for': clientIp
+                'user-agent': this.userAgent,
+                'x-real-ip': this.clientIp,
+                'x-forwarded-for': this.clientIp
             };
 
-            return this.resolveLink(providerUrl, ws, jar, headers)
+            return this._resolveLink(providerUrl, ws, this.rp.jar(), headers)
         } catch (err) {
             this._onErrorOccurred(err)
         }

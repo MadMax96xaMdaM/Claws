@@ -1,6 +1,6 @@
 const cheerio = require('cheerio');
 const randomUseragent = require('random-useragent');
-const {absoluteUrl, padTvNumber} = require('../../../utils');
+const { absoluteUrl, padTvNumber } = require('../../../utils');
 const BaseProvider = require('../BaseProvider');
 
 module.exports = class Series8 extends BaseProvider {
@@ -11,25 +11,14 @@ module.exports = class Series8 extends BaseProvider {
 
     /** @inheritdoc */
     async scrape(url, req, ws) {
-        const clientIp = this._getClientIp(req);
         const showTitle = req.query.title.toLowerCase();
-        const year = req.query.year;
-        const season = req.query.season;
-        const episode = req.query.episode;
-        const type = req.query.type;
-        const resolvePromises = [];
-        const headers = {
-            'user-agent': randomUseragent.getRandom(),
-            'x-real-ip': req.client.remoteAddress,
-            'x-forwarded-for': req.client.remoteAddress
-        };
+        const { season, episode, year } = req.query;
+        let resolvePromises = [];
 
         try {
             const searchTitle = showTitle.replace(/\s+/g, '-');
             let searchUrl = (`${url}/movie/search/${searchTitle}`);
-            const rp = this._getRequest(req, ws);
-            const jar = rp.jar();
-            const response = await this._createRequest(rp, searchUrl);
+            const response = await this._createRequest(this.rp, searchUrl);
             let $ = cheerio.load(response);
 
             const escapedShowTitle = showTitle.replace(/[^a-zA-Z0-9]+/g, '-');
@@ -62,19 +51,32 @@ module.exports = class Series8 extends BaseProvider {
 
             const formattedEpisode = isPadded ? padTvNumber(episode) : episode;
             const episodeLink = `${seasonPageLink}/watching.html`;
-            const episodePageHtml = await this._createRequest(rp, episodeLink);
-
+            const episodePageHtml = await this._createRequest(this.rp, episodeLink);
             $ = cheerio.load(episodePageHtml);
 
-            $('.btn-eps').toArray().forEach((iframeLinks) => {
-                if ($(iframeLinks).attr('episode-data') === formattedEpisode.toString()) {
-                    const link = $(iframeLinks).attr('player-data');
-                    resolvePromises.push(this.resolveLink(link, ws, jar, headers));
+            const videoUrls = $('.btn-eps').toArray().filter((url) => {
+                if ($(url).attr('episode-data') === formattedEpisode.toString()) {
+                    return $(url).attr('player-data');
                 }
-            });
+            }).map(url => $(url).attr('player-data'));
+            resolveLinks = this.resolveVideoLinks(ws, videoUrls)
         } catch (err) {
             this._onErrorOccurred(err)
         }
         return Promise.all(resolvePromises)
+    }
+
+    /** @inheritdoc */
+    async resolveVideoLinks(ws, videoUrls) {
+        const resolveLinkPromises = [];
+        const headers = {
+            'user-agent': this.userAgent,
+            'x-real-ip': this.remoteAddress,
+            'x-forwarded-for': this.remoteAddress
+        };
+        videoUrls.forEach((link) => {
+            resolveLinkPromises.push(this._resolveLink(link, ws, this.rp.jar(), headers));
+        });
+        return resolveLinkPromises;
     }
 }

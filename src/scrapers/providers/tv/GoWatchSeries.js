@@ -1,6 +1,5 @@
 const Promise = require('bluebird');
 const cheerio = require('cheerio');
-const randomUseragent = require('random-useragent');
 const { padTvNumber } = require('../../../utils');
 const BaseProvider = require('../BaseProvider');
 
@@ -12,22 +11,18 @@ module.exports = class SwatchSeries extends BaseProvider {
 
     /** @inheritdoc */
     async scrape(url, req, ws) {
-        const clientIp = req.client.remoteAddress.replace('::ffff:', '').replace('::1', '');
         const showTitle = req.query.title.toLowerCase();
         const { season, episode, year } = req.query;
-        const rp = this._getRequest(req, ws);
-        const jar = rp.jar();
-        const resolvePromises = [];
-        const userAgent = randomUseragent.getRandom();
         const headers = {
-            'user-agent': userAgent,
-            'x-real-ip': req.client.remoteAddress,
-            'x-forwarded-for': req.client.remoteAddress
+            'user-agent': this.userAgent,
+            'x-real-ip': this.remoteAddress,
+            'x-forwarded-for': this.remoteAddress
         }
+        let resolvePromises = [];
 
         try {
             const searchUrl = showTitle.replace(/ /, '%20');
-            const response = await this._createRequest(rp, `${url}/search.html?keyword=${searchUrl}`, jar, headers);
+            const response = await this._createRequest(this.rp, `${url}/search.html?keyword=${searchUrl}`, this.rp.jar(), headers);
             let $ = cheerio.load(response);
 
             const escapedShowTitle = showTitle.replace(/[^a-zA-Z0-9]+/g, '-');
@@ -51,7 +46,6 @@ module.exports = class SwatchSeries extends BaseProvider {
                 }
             }
             if (!seasonLinkElement.length) {
-                // No season link.
                 this.logger.debug('GoWatchSeries', `Could not find: ${showTitle} (${year}) Season ${season}`);
                 return Promise.resolve();
             }
@@ -60,34 +54,37 @@ module.exports = class SwatchSeries extends BaseProvider {
 
             const episodeLink = `${url}/${linkText}`;
 
-            const episodePageHtml = await this._createRequest(rp, episodeLink, jar, headers);
+            const episodePageHtml = await this._createRequest(this.rp, episodeLink, this.rp.jar(), headers);
             $ = cheerio.load(episodePageHtml);
-            const videoDiv = $('.play-video');
-            const otherVideoLinks = $('.anime_muti_link');
-            const iframeLinks = [];
-
-            otherVideoLinks.children().toArray().forEach((c) => {
-                if (c.name === 'ul') {
-                    c.children.forEach((t) => {
+            const videoUrls = [];
+            $('.anime_muti_link').children().toArray().forEach((tag) => {
+                if (tag.name === 'ul') {
+                    tag.children.forEach((t) => {
                         if (t.name === 'li') {
-                            iframeLinks.push(t.attribs['data-video'])
+                            videoUrls.push(t.attribs['data-video']);
                         }
                     })
                 }
             });
-
-            iframeLinks.forEach((link) => {
-                const headers = {
-                    'user-agent': userAgent,
-                    'x-real-ip': clientIp,
-                    'x-forwarded-for': clientIp
-                };
-                resolvePromises.push(this.resolveLink(link, ws, jar, headers));
-            });
-            
+            resolvePromises = this.scrapeVideoLinks(ws, videoUrls)
         } catch (err) {
             this._onErrorOccurred(err);
         }
         return Promise.all(resolvePromises);
     }
+
+    /** @inheritdoc */
+    async resolveVideoLinks(ws, videoUrls) {
+        const resolveLinkPromises = [];
+        videoUrls.forEach((link) => {
+            const headers = {
+                'user-agent': this.userAgent,
+                'x-real-ip': this.clientIp,
+                'x-forwarded-for': this.clientIp
+            };
+            resolveLinkPromises.push(this._resolveLink(link, ws, this.rp.jar(), headers));
+        });
+        return resolveLinkPromises;
+    }
+
 }

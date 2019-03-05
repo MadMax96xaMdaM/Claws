@@ -52,7 +52,7 @@ module.exports = class bfmovies extends BaseProvider {
 
             let openloadURL = cheerio.load(openloadHTML)('meta[name="og:url"]').attr('content');
             if (openloadURL) {
-                resolvePromises.push(this.resolveLink(openloadURL, ws, jar, headers));
+                resolvePromises.push(this._resolveLink(openloadURL, ws, jar, headers));
             } else {
                 return Promise.resolve();
             }

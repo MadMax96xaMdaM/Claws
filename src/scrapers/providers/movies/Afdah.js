@@ -143,7 +143,7 @@ module.exports = class Afdah extends BaseProvider {
 
             const providerUrl = `https://oload.cloud/embed/${openloadData.id}`;
 
-            resolvePromises.push(this.resolveLink(providerUrl, ws, jar, headers));
+            resolvePromises.push(this._resolveLink(providerUrl, ws, jar, headers));
         }
         }
     catch(err) {

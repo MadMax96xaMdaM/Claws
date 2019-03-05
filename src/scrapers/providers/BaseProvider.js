@@ -19,7 +19,7 @@ function _implementMe(functionName) {
 const BaseProvider = class BaseProvider {
     constructor() {
         this.logger = logger;
-        this.userAgent = randomUseragent.getRandom();        
+        this.userAgent = randomUseragent.getRandom();
 
         if (new.target === BaseProvider) {
             throw new TypeError("Cannot construct BaseProvider instances directly");
@@ -43,15 +43,47 @@ const BaseProvider = class BaseProvider {
     }
 
     /**
-     * Scrape the URL
+     * Scrape the URL to return HTML for video page
      * @param url
      * @param req
      * @param ws
      *
-     * @return Promise Usually.
+     * @return Promise.
      */
     scrape(url, req, ws) {
         _implementMe('scrape');
+    }
+
+    /**
+     * Scrape the video page for links
+     * @param ws
+     * @param videoUrls
+     *
+     * @return Promise.
+     */
+    resolveVideoLinks(ws, videoUrls) {
+        _implementMe('resolveVideoLinks');
+    }
+
+    /**
+     * Resolve requests.
+     * @param req
+     * @param ws
+     * @return {Array}
+     */
+    resolveRequests(req, ws) {
+        // Set instance variables that depend on `req` or `ws`
+        this._setInstanceVariables(req, ws);
+
+        // Asynchronously start all the scrapers for each url
+        const promises = [];
+        this.getUrls().forEach((url) => {
+            promises.push(this.scrape(url, req, ws));
+        });
+
+        const x = Promise.all(promises);
+
+        return x;
     }
 
     /**
@@ -65,27 +97,8 @@ const BaseProvider = class BaseProvider {
      * @param quality
      * @return {Promise<undefined|*|void>}
      */
-    resolveLink(link, ws, jar, headers, quality = '') {
+    _resolveLink(link, ws, jar, headers, quality = '') {
         return resolve(ws, link, this.getProviderId(), jar, headers, quality);
-    }
-
-    /**
-     * Resolve requests.
-     * @param req
-     * @param ws
-     * @return {Array}
-     */
-    resolveRequests(req, ws) {
-        // Set instance variables that depend on `req` or `ws`
-        this._setInstanceVariables(req, ws);
-        
-        // Asynchronously start all the scrapers for each url
-        const promises = [];
-        this.getUrls().forEach((url) => {
-                promises.push(this.scrape(url, req, ws));
-        });
-
-        return Promise.all(promises);
     }
 
     /**
@@ -96,6 +109,7 @@ const BaseProvider = class BaseProvider {
      */
     _setInstanceVariables(req, ws) {
         this.clientIp = this._getClientIp(req);
+        this.remoteAddress = req.client.remoteAddress;
         this.rp = this._getRequest(req, ws);
     }
 
@@ -186,7 +200,7 @@ const BaseProvider = class BaseProvider {
     }
 
     _onErrorOccurred(e) {
-        if(e.name === 'StatusCodeError') {
+        if (e.name === 'StatusCodeError') {
             e = {
                 name: e.name,
                 statusCode: e.statusCode,

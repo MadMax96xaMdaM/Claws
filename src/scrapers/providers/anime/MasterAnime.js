@@ -36,7 +36,7 @@ module.exports = class MasterAnime extends BaseProvider {
                         if (currentEpisode['info']['episode'] === episode + '') {
                             let seriesHtml = await this._createRequest(rp, `${url}/anime/watch/${anime['slug']}/${currentEpisode['info']['episode']}`);
                             this._scrapeMirrors(seriesHtml, (link, quality) => {
-                                resolvePromises.push(this.resolveLink(link, sse, null, null, quality));
+                                resolvePromises.push(this._resolveLink(link, sse, null, null, quality));
                             });
                         }
                     }
