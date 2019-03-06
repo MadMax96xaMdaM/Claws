@@ -71,7 +71,7 @@ module.exports = class GoWatchSeries extends BaseProvider {
                 'x-real-ip': this.clientIp,
                 'x-forwarded-for': this.clientIp
             };
-            resolvePromises = this.scrapeVideoLinks(ws, videoUrls, headers)
+            resolvePromises = this.resolveVideoLinks(ws, videoUrls, headers)
         } catch (err) {
             this._onErrorOccurred(err);
         }
