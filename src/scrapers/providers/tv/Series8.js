@@ -1,3 +1,4 @@
+const Promise = require('bluebird');
 const cheerio = require('cheerio');
 const randomUseragent = require('random-useragent');
 const { absoluteUrl, padTvNumber } = require('../../../utils');
@@ -44,7 +45,7 @@ module.exports = class Series8 extends BaseProvider {
             if (!seasonLinkElement.length) {
                 // No season link.
                 this.logger.debug('Series8', `Could not find: ${showTitle} (${year}) Season ${season}`);
-                return Promise.resolve();
+                return Promise.all(resolvePromises);
             }
 
             const seasonPageLink = absoluteUrl(url, `/film/${linkText}`);
@@ -59,7 +60,7 @@ module.exports = class Series8 extends BaseProvider {
                     return $(url).attr('player-data');
                 }
             }).map(url => $(url).attr('player-data'));
-            resolveLinks = this.resolveVideoLinks(ws, videoUrls)
+            resolvePromises = this.resolveVideoLinks(ws, videoUrls)
         } catch (err) {
             this._onErrorOccurred(err)
         }

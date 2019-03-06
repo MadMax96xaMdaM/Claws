@@ -55,7 +55,7 @@ const BaseProvider = class BaseProvider {
     }
 
     /**
-     * Scrape the video page for links
+     * Call resolveLink function for all video urls found via scraping
      * @param ws
      * @param videoUrls
      *
