@@ -18,6 +18,11 @@ module.exports = class SwatchSeries extends BaseProvider {
         const searchTitle = showTitle.replace(/\s+/g, '%20').toLowerCase();
         const searchUrl = `${url}/search/${searchTitle}`;
         let resolvePromises = [];
+        const headers = {
+            'user-agent': this.userAgent,
+            'x-real-ip': this.clientIp,
+            'x-forwarded-for': this.clientIp
+        };
 
         try {
             const response = await this._createRequest(this.rp, searchUrl, this.rp.jar(), {
@@ -66,24 +71,10 @@ module.exports = class SwatchSeries extends BaseProvider {
             });
             $ = cheerio.load(episodePageHtml);
             const videoUrls = $('.watchlink').toArray().map(element => URL.parse($(element).attr('href') || '', true).query.r).filter(url => !!url).map(url => Buffer.from(url, 'base64').toString());
-            resolvePromises = this.resolveVideoLinks(ws, videoUrls);
+            resolvePromises = this.resolveVideoLinks(ws, videoUrls, headers);
         } catch (err) {
             this._onErrorOccurred(err);
         }
         return Promise.all(resolvePromises);
-    }
-
-    /** @inheritdoc */
-    async resolveVideoLinks(ws, videoUrls) {
-        const resolveLinkPromises = [];
-        videoUrls.forEach((link) => {
-            const headers = {
-                'user-agent': this.userAgent,
-                'x-real-ip': this.clientIp,
-                'x-forwarded-for': this.clientIp
-            };
-            resolveLinkPromises.push(this._resolveLink(link, ws, this.rp.jar(), headers));
-        });
-        return resolveLinkPromises;
     }
 }

@@ -13,6 +13,11 @@ module.exports = class extends BaseProvider {
         const showTitle = req.query.title;
         const { season, episode, year } = req.query;
         let resolvePromises = [];
+        const headers = {
+            'user-agent': this.userAgent,
+            'x-real-ip': this.clientIp,
+            'x-forwarded-for': this.clientIp
+        };
 
         try {
             const jar = this.rp.jar();
@@ -52,14 +57,14 @@ module.exports = class extends BaseProvider {
             $ = cheerio.load(episodePageHtml);
             const resolveLinkPromises = [];
             const videoUrls = $('.watch-btn').toArray().map(element => `${url}${$(element).attr('href')}`);
-            resolvePromises = this.resolveVideoLinks(ws, videoUrls);
+            resolvePromises = this.resolveVideoLinks(ws, videoUrls, headers);
         } catch (err) {
             this._onErrorOccurred(err);
         }
         return Promise.all(resolvePromises);
     }
 
-    /** @inheritdoc */
+    /** @override */
     async resolveVideoLinks(ws, videoUrls) {
         const resolveLinkPromises = [];        
         videoUrls.forEach((videoUrl) => {

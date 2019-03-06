@@ -61,8 +61,12 @@ const BaseProvider = class BaseProvider {
      *
      * @return Promise.
      */
-    resolveVideoLinks(ws, videoUrls) {
-        _implementMe('resolveVideoLinks');
+    resolveVideoLinks(ws, videoUrls, headers) {
+        const resolveLinkPromises = [];
+        videoUrls.forEach((link) => {
+            resolveLinkPromises.push(this._resolveLink(link, ws, this.rp.jar(), headers));
+        });
+        return resolveLinkPromises;
     }
 
     /**

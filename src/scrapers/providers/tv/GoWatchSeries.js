@@ -13,7 +13,7 @@ module.exports = class SwatchSeries extends BaseProvider {
     async scrape(url, req, ws) {
         const showTitle = req.query.title.toLowerCase();
         const { season, episode, year } = req.query;
-        const headers = {
+        let headers = {
             'user-agent': this.userAgent,
             'x-real-ip': this.remoteAddress,
             'x-forwarded-for': this.remoteAddress
@@ -66,25 +66,15 @@ module.exports = class SwatchSeries extends BaseProvider {
                     })
                 }
             });
-            resolvePromises = this.scrapeVideoLinks(ws, videoUrls)
+            headers = {
+                'user-agent': this.userAgent,
+                'x-real-ip': this.clientIp,
+                'x-forwarded-for': this.clientIp
+            };
+            resolvePromises = this.scrapeVideoLinks(ws, videoUrls, headers)
         } catch (err) {
             this._onErrorOccurred(err);
         }
         return Promise.all(resolvePromises);
     }
-
-    /** @inheritdoc */
-    async resolveVideoLinks(ws, videoUrls) {
-        const resolveLinkPromises = [];
-        videoUrls.forEach((link) => {
-            const headers = {
-                'user-agent': this.userAgent,
-                'x-real-ip': this.clientIp,
-                'x-forwarded-for': this.clientIp
-            };
-            resolveLinkPromises.push(this._resolveLink(link, ws, this.rp.jar(), headers));
-        });
-        return resolveLinkPromises;
-    }
-
 }

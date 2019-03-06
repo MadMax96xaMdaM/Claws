@@ -15,6 +15,11 @@ module.exports = class Series8 extends BaseProvider {
         const showTitle = req.query.title.toLowerCase();
         const { season, episode, year } = req.query;
         let resolvePromises = [];
+        const headers = {
+            'user-agent': this.userAgent,
+            'x-real-ip': this.remoteAddress,
+            'x-forwarded-for': this.remoteAddress
+        };
 
         try {
             const searchTitle = showTitle.replace(/\s+/g, '-');
@@ -53,31 +58,17 @@ module.exports = class Series8 extends BaseProvider {
             const formattedEpisode = isPadded ? padTvNumber(episode) : episode;
             const episodeLink = `${seasonPageLink}/watching.html`;
             const episodePageHtml = await this._createRequest(this.rp, episodeLink);
+            
             $ = cheerio.load(episodePageHtml);
-
             const videoUrls = $('.btn-eps').toArray().filter((url) => {
                 if ($(url).attr('episode-data') === formattedEpisode.toString()) {
                     return $(url).attr('player-data');
                 }
             }).map(url => $(url).attr('player-data'));
-            resolvePromises = this.resolveVideoLinks(ws, videoUrls)
+            resolvePromises = this.resolveVideoLinks(ws, videoUrls, headers)
         } catch (err) {
             this._onErrorOccurred(err)
         }
         return Promise.all(resolvePromises)
-    }
-
-    /** @inheritdoc */
-    async resolveVideoLinks(ws, videoUrls) {
-        const resolveLinkPromises = [];
-        const headers = {
-            'user-agent': this.userAgent,
-            'x-real-ip': this.remoteAddress,
-            'x-forwarded-for': this.remoteAddress
-        };
-        videoUrls.forEach((link) => {
-            resolveLinkPromises.push(this._resolveLink(link, ws, this.rp.jar(), headers));
-        });
-        return resolveLinkPromises;
     }
 }
