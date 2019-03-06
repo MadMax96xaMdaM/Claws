@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const { padTvNumber } = require('../../../utils');
 const BaseProvider = require('../BaseProvider');
 
-module.exports = class SwatchSeries extends BaseProvider {
+module.exports = class GoWatchSeries extends BaseProvider {
     /** @inheritdoc */
     getUrls() {
         return ['https://gowatchseries.co'];
