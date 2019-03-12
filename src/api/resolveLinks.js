@@ -50,13 +50,7 @@ const resolveLinks = async (searchData, ws, req) => {
     }
 
     availableProviders.forEach((provider) => {
-        if (provider instanceof BaseProvider) {
-            // Use object orientated provider.
             return promises.push(provider.resolveRequests(req, sse));
-        } else {
-            // Use declarative provider.
-            return promises.push(provider(req, sse));
-        }
     });
 
     await Promise.all(promises);
