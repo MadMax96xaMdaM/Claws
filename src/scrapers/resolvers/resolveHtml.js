@@ -3,6 +3,7 @@ const rp = require('request-promise');
 const resolvers = {
     Openload: require('./Openload').OpenloadHtml,
     Streamango: require('./Streamango').StreamangoHtml,
+    Streamcherry: require('./Streamcherry').StreamcherryHtml,
     // RapidVideo: require('./RapidVideo'),
     // AZMovies: require('./AZMovies'),
     // Vidlox: require('./Vidlox'),
@@ -34,6 +35,9 @@ async function resolveHtml(html, resolver, headers, cookie) {
 
     } else if (resolver === 'Streamango') {
         return [createEvent(data, false, {}, {quality: '', provider: 'Streamango', cookie, isResultOfScrape: true})];
+
+    } else if (resolver === 'Streamcherry') {
+        return [createEvent(data, false, {}, {quality: '', provider: 'Streamcherry', cookie, isResultOfScrape: true})];
 
     } else if (resolver === 'VShare') {
         return [createEvent(data, false, {}, {quality: '', provider: 'VShare', cookie, isResultOfScrape: true})];

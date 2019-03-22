@@ -1,5 +1,6 @@
 const {Openload} = require('./Openload');
 const {Streamango} = require('./Streamango');
+const {Streamcherry} = require('./Streamcherry');
 const RapidVideo = require('./RapidVideo');
 const AZMovies = require('./AZMovies');
 const Vidlox = require('./Vidlox');
@@ -23,6 +24,7 @@ const EnterVideo = require('./EnterVideo');
 const logger = require('../../utils/logger');
 
 const Mp4Upload = require('./Mp4Upload');
+// const Xstreamcdn = require('./Xstreamcdn');
 const StreamLewd = require('./StreamLewd');
 const TikiWiki = require('./TikiWiki');
 
@@ -31,6 +33,7 @@ const createEvent = require('../../utils/createEvent');
 /** @type {BaseResolver[]} */
 const resolvers = [
     new Mp4Upload(),
+   // new Xstreamcdn(),
     new StreamLewd(),
     new TikiWiki(),
 ];
@@ -81,7 +84,16 @@ async function resolve(sse, uri, source, jar, headers, quality = '') {
             }
             const event = createEvent(data, ipLocked, {target: uri}, {quality, provider: 'Streamango', source});
             sse.send(event, event.event);
-
+ 
+        } else if (uri.includes('streamcherry.com')) {
+            let data;
+            if (!ipLocked) {
+                data = await Streamcherry(uri, jar, headers);
+            }
+            const event = createEvent(data, ipLocked, {target: uri}, {quality, provider: 'Streamcherry', source});
+            sse.send(event, event.event);
+        
+            
         } else if (uri.includes('rapidvideo.com')) {
             const data = await RapidVideo(uri, jar);
             const event = createEvent(data, false, undefined, {quality, provider: 'RapidVideo', source});
