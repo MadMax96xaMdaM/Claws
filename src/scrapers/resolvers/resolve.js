@@ -24,7 +24,6 @@ const EnterVideo = require('./EnterVideo');
 const logger = require('../../utils/logger');
 
 const Mp4Upload = require('./Mp4Upload');
-// const Xstreamcdn = require('./Xstreamcdn');
 const StreamLewd = require('./StreamLewd');
 const TikiWiki = require('./TikiWiki');
 
@@ -33,7 +32,6 @@ const createEvent = require('../../utils/createEvent');
 /** @type {BaseResolver[]} */
 const resolvers = [
     new Mp4Upload(),
-   // new Xstreamcdn(),
     new StreamLewd(),
     new TikiWiki(),
 ];
