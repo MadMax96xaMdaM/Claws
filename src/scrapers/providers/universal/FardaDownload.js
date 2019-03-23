@@ -46,11 +46,23 @@ module.exports = class FardaDownload extends BaseProvider {
             $ = cheerio.load(videoPageHTML);
 
             if (type == 'tv') {
-                const matchedSection = $(`div.title-season:contains(${season})`).nextUntil('div.title-season', 'div').toArray();
-                for(const section of matchedSection) {
+                let seasonHeader = '';
+                $(`div.title-season`).toArray().forEach(element => {
+                    const seasonTitle = $(element).text();
+                    if (seasonTitle.endsWith(` ${season}`)) {
+                        seasonHeader = seasonTitle;
+                        return;
+                    }
+                });
+                console.log(seasonHeader);
+                const matchedSection = $('div.title-season').filter(function () {
+                    return $(this).text() == seasonHeader;
+                }).nextUntil('div.title-season', 'div').toArray();
+                console.log(matchedSection.length);
+                for (const section of matchedSection) {
                     const folderLink = $(section).find('a.downloadf').attr('href');
                     const folderHTML = await this._createRequest(rp, folderLink, jar, headers);
-                    
+
                     $ = cheerio.load(folderHTML);
 
                     const paddedSeason = `${season}`.padStart(2, '0');

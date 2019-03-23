@@ -279,8 +279,8 @@ async function resolve(ws, uri, provider, jar, headers, quality = '') {
             sse.send(event, event.event);*/
         } else if (uri.includes('updlf.com') || uri.includes('upload8.net')) {
             const data = await FardaDownload(uri, jar, headers);
-            const event = createEvent(data, false, undefined, {quality, provider: 'FardaDownload', source, isDownload: true});
-            sse.send(event, event.event);
+            const event = createEvent(data, false, undefined, {quality, source: 'FardaDownload', provider});
+            await ws.send(event, event.event);
          } else {
             logger.warn({source, providerUrl: uri, warning: 'Missing resolver'});
         }
