@@ -22,7 +22,10 @@ module.exports = class ODB extends BaseProvider {
         try {
             const rp = this._getRequest(req, ws);
             const jar = rp.jar();
-            let searchUrl = `${url}/embed?title=${title.replace(/ /g, '%20')}&year=${year}`;
+            let searchUrl = this._generateUrl(`${url}/embed`, {
+                title: title,
+                year: year
+            });
             if (type == 'tv') {
                 searchUrl += `&s=${season}&e=${episode}`;
             }

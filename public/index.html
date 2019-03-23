@@ -26,6 +26,10 @@
                 font-family: "Roboto", sans-serif;
             }
 
+            label {
+                color: white;
+            }
+
             .material-button-raised {
                 position: relative;
                 display: inline-block;
@@ -206,7 +210,7 @@
         </noscript>
 
         <div class="searchBox">
-            <input id="searchText" type="text" placeholder="Enter a movie..." />
+            <input id="searchText" type="text" placeholder="Search for something..." />
             <br><br><br>
             <button type="button" class="material-button-raised primary" onclick="search()">Search</button>
             <button id="stop" type="button" class="material-button-raised red" disabled onclick="stop()">Stop Scraping</button>
@@ -269,7 +273,7 @@
 
             async function scrapeMovies(searchData) {
                 let token = await authenticate();
-                stop(); // Stop existing eventsource.
+                stop(); // Stop existing websocket.
                 ws = new WebSocket(`ws://localhost:3000/?token=${token}`);
                 ws.onopen = function() {
                     // Web Socket is connected, send data using send()
@@ -298,7 +302,7 @@
             }
             async function scrapeTV(searchData) {
                 let token = await authenticate();
-                stop(); // Stop existing eventsource.
+                stop(); // Stop existing websocket.
                 ws = new WebSocket(`ws://localhost:3000/?token=${token}`);
                 let isAnime = document.getElementById('isAnime').checked;
                 ws.onopen = function() {

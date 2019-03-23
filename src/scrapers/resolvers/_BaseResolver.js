@@ -11,7 +11,6 @@ function _implementMe(functionName) {
  * @property {String|null} quality The link quality
  * @property {String|null} provider The provider's name (human readable)
  * @property {String|null} source The source that uploaded the content to the provider (human readable)
- * @property {Boolean|null} isDownload Whether this source is download only.
  * @property {String|null} cookieRequired The name of the cookie required by the client.
  * @property {String|null} cookie The cookie to pass along to the client.
  */
@@ -73,7 +72,7 @@ const BaseResolver = class BaseResolver {
     /**
      * Resolve a URI.
      * @param {Object} meta The meta data for resolving requests.
-     * @param {Object} meta.sse server-side emitter/websocket agent.
+     * @param {Object} meta.ws server-side emitter/websocket agent.
      * @param {String} meta.source The source that initiated the request (Usually the provider ID).
      * @param {String} meta.quality The quality of the current request.
      * @param {String} uri
@@ -93,7 +92,7 @@ const BaseResolver = class BaseResolver {
     /**
      * Resolve an html file.
      * @param {Object} meta The meta data for resolving requests.
-     * @param {Object?} meta.sse server-side emitter/websocket agent. Only available when resolving on the server-side.
+     * @param {Object?} meta.ws server-side emitter/websocket agent. Only available when resolving on the server-side.
      * @param {String} meta.source The source that initiated the request.
      * @param {String} meta.quality The quality of the current request.
      * @param html
@@ -130,23 +129,23 @@ const BaseResolver = class BaseResolver {
      *
      * @param {ClawsMetadata} metaData
      * @param {ClawsLink[]} links
-     * @return {Array}
+     * @return {Promise<Array>}
      */
-    processHtmlResults(metaData, links) {
-        if (metaData.sse) {
-            if (metaData.sse.stopExecution) {
+    async processHtmlResults(metaData, links) {
+        if (metaData.ws) {
+            if (metaData.ws.stopExecution) {
                 console.log(`${this.getResolverId()}: Skip resolve due to disconnect. This should rarely ever happen!`);
                 return links;
             }
 
             // Emitting resources directly from the server.
-            links.forEach(link => {
+            for (let link of links) {
                 const event = this.createEvent(link.data, false, undefined, {
                     quality: link.meta.quality || metaData.quality,
-                    source: metaData.source
+                    provider: metaData.provider
                 });
-                metaData.sse.send(event, event.event);
-            });
+                await metaData.ws.send(event, event.event);
+            }
             return links;
         } else {
             // Returning links directly from HTMl.
@@ -169,8 +168,8 @@ const BaseResolver = class BaseResolver {
      * @return {Object} The event object.
      */
     createEvent(data, ipLocked, pairing, metaData, headers) {
-        if (!metaData['provider']) {
-            metaData['provider'] = this.getResolverId();
+        if (!metaData['source']) {
+            metaData['source'] = this.getResolverId();
         }
         return createEvent(data, ipLocked, pairing, metaData, headers);
     }
@@ -180,12 +179,12 @@ const BaseResolver = class BaseResolver {
      * @see scrapeFromClientResponse
      *
      * @param {String} uri The uri for the current resolver.
-     * @param {{quality: String, source: String}|ClawsMetadata} metaData The request metadata.
+     * @param {{quality: String, provider: String}|ClawsMetadata} metaData The request metadata.
      *
      * @return {Object}
      */
     createScrapeEvent(uri, metaData) {
-        return this.createEvent(undefined, true, {target: uri}, {quality: metaData.quality, source: metaData.source})
+        return this.createEvent(undefined, true, {target: uri}, {quality: metaData.quality, provider: metaData.provider})
     }
 
     /**
