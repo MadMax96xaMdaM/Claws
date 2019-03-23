@@ -3,7 +3,7 @@ const rp = require('request-promise');
 const resolvers = {
     Openload: require('./Openload').OpenloadHtml,
     Streamango: require('./Streamango').StreamangoHtml,
-    Streamcherry: require('./Streamcherry').StreamcherryHtml,
+    //Streamcherry: require('./Streamcherry').StreamcherryHtml,
     // RapidVideo: require('./RapidVideo'),
     // AZMovies: require('./AZMovies'),
     // Vidlox: require('./Vidlox'),

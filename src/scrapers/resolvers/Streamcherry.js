@@ -1,46 +1,25 @@
-const rp = require('request-promise');
+const BaseResolver = require('./_BaseResolver');
+
 const cheerio = require('cheerio');
 const vm = require('vm');
 
-const normalizeUrl = require('../../utils').normalizeUrl;
+module.exports = class Streamcherry extends BaseResolver {
 
-async function Streamcherry(uri, jar, headers) {
-    let providerPageHtml = await rp({
-        uri,
-        headers,
-        jar,
-        timeout: 5000
-    });
+    /** @inheritdoc */
+    resolveHtml(meta, html, jar, headers) {
+        let $ = cheerio.load(html);
+        let script = $('script').last()[0].children[0].data;
 
-    return StreamcherryHtml(providerPageHtml);
-}
+        let jwPlayerConfig;
+        let jQuery = this._getJqueryShim($);
+        const sandbox = this._getDefaultSandbox(jQuery, this._getJwPlayerShim((config) => {
+            jwPlayerConfig = config;
+        }));
+        vm.createContext(sandbox); // Contextify the sandbox.
+        vm.runInContext(script, sandbox);
 
-function StreamcherryHtml(providerPageHtml) {
-    let $ = cheerio.load(providerPageHtml);
+        let links = this._resolveJwPlayerLinks(jwPlayerConfig, meta);
 
-    const jQuery = function(selector, anotherArg) {
-        return {
-            $(selector) {
-                return $(selector);
-            },
-            ready(f) {
-                f();
-            },
-            click() {},
-            hide() {}
-        }
-    };
-
-    // starting variables
-    const sandbox = {
-        $: jQuery,
-        document: {},
-        window: {},
-    };
-    vm.createContext(sandbox); // Contextify the sandbox.
-    vm.runInContext($('script:contains(srces)')[0].children[0].data.replace('src:d(', 'src:window.d('), sandbox);
-
-    return normalizeUrl(sandbox.srces[0].src, 'https');
-}
-
-module.exports = exports = {Streamcherry, StreamcherryHtml};
+        return this.processHtmlResults(meta, links);
+    }
+};
