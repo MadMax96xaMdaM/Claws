@@ -5,13 +5,13 @@ const StreamLewd = require('../../src/scrapers/resolvers/StreamLewd');
 let instance = new StreamLewd();
 
 describe('StreamLewd', function () {
-    it('should resolve html links', function () {
+    it('should resolve html links', async function () {
         // 1. ARRANGE
         let html = readTestAsset('resolvers/stream-lewd/DaWDkPJQ3wry2mV.html');
         let meta = {};
 
         // 2. ACT
-        let results = instance.resolveHtml(meta, html, null, null);
+        let results = await instance.resolveHtml(meta, html, null, null);
 
         // 3. ASSERT
         expect(results.length).to.be.equal(4);
