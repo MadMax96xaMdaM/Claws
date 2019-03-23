@@ -54,11 +54,9 @@ module.exports = class FardaDownload extends BaseProvider {
                         return;
                     }
                 });
-                console.log(seasonHeader);
                 const matchedSection = $('div.title-season').filter(function () {
                     return $(this).text() == seasonHeader;
                 }).nextUntil('div.title-season', 'div').toArray();
-                console.log(matchedSection.length);
                 for (const section of matchedSection) {
                     const folderLink = $(section).find('a.downloadf').attr('href');
                     const folderHTML = await this._createRequest(rp, folderLink, jar, headers);
