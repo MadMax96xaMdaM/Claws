@@ -18,7 +18,8 @@ module.exports = exports = {
     anime: [],
     universal: [
         new (require('./universal/123movie'))(),
-        new (require('./universal/ODB'))()
+        new (require('./universal/ODB'))(),
         //require('./universal/5movies')
+        new (require('./universal/FardaDownload'))()
     ]
 };
