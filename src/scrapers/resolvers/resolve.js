@@ -1,5 +1,6 @@
 const {Openload} = require('./Openload');
 const {Streamango} = require('./Streamango');
+const {Streamcherry} = require('./Streamcherry');
 const RapidVideo = require('./RapidVideo');
 const AZMovies = require('./AZMovies');
 const Vidlox = require('./Vidlox');
@@ -80,9 +81,19 @@ async function resolve(ws, uri, provider, jar, headers, quality = '') {
             if (!ipLocked) {
                 data = await Streamango(uri, jar, headers);
             }
-            const event = createEvent(data, ipLocked, {target: uri}, {quality, source: 'Streamango', provider});
-            await ws.send(event, event.event);
 
+            const event = createEvent(data, ipLocked, {target: uri}, {quality, provider: 'Streamango', source});
+            sse.send(event, event.event);
+ 
+        } else if (uri.includes('streamcherry.com')) {
+            let data;
+            if (!ipLocked) {
+                data = await Streamcherry(uri, jar, headers);
+            }
+          
+            const event = createEvent(data, ipLocked, {target: uri}, {quality, provider: 'Streamcherry', source});
+            sse.send(event, event.event);
+          
         } else if (uri.includes('rapidvideo.com')) {
             const data = await RapidVideo(uri, jar);
             const event = createEvent(data, false, undefined, {quality, source: 'RapidVideo', provider});
