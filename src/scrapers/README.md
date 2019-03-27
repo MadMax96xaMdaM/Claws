@@ -9,5 +9,5 @@ Priority | Website | Type | CF DNS | CF Captcha | Content Type | Notes
 5 | http://scnsrc.me | DDL | Yes | No | Universal |
 6 | https://ultrahdindir.net | DDL | Yes | No | Universal |
 7 | http://dl.filmbaroon.net | DDL | Yes | No | Film |
-1000 | https://tubitv.com/ | Generic | No | No | Universal | Older/Niche Content - Legal site?
+1000 | https://tubitv.com/ | Generic | No | No | Universal | Older/Niche Content - Legal site? Need VPN for GPRD.
 
