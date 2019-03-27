@@ -10,5 +10,6 @@ Priority | Website | Type | CF DNS | CF Captcha | Content Type | Notes
 6 | https://ultrahdindir.net | DDL | Yes | No | Universal |
 7 | http://filmbaroon.net | DDL | Yes | No | Film |
 8 | https://9anime.to (or .ru) | Generic | Yes | No | Animé Universal | Worth having for testing Animé in future
+9 | http://lavinmovie.net/ | DDL | Yes | Yes | Universal | Test for when CF bypass is implemented
 1000 | https://tubitv.com/ | Generic | No | No | Universal | Older/Niche Content - Legal site? Need VPN for GPRD.
 
